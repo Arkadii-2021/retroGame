@@ -1,4 +1,5 @@
 import { calcHealthLevel, calcTileType } from './utils';
+import cursors from './cursors';
 
 export default class GamePlay {
   constructor() {
@@ -54,9 +55,9 @@ export default class GamePlay {
     for (let i = 0; i < this.boardSize ** 2; i += 1) {
       const cellEl = document.createElement('div');
       cellEl.classList.add('cell', 'map-tile', `map-tile-${calcTileType(i, this.boardSize)}`);
-      cellEl.addEventListener('mouseenter', event => this.onCellEnter(event));
+	cellEl.addEventListener('mouseenter', event => {this.onCellEnter(event)} );
       cellEl.addEventListener('mouseleave', event => this.onCellLeave(event));
-      cellEl.addEventListener('click', event => this.onCellClick(event));
+	cellEl.addEventListener('click', event => this.onCellClick(event));
       this.boardEl.appendChild(cellEl);
     }
 
@@ -147,19 +148,69 @@ export default class GamePlay {
 
   onCellEnter(event) {
     event.preventDefault();
+	const gameContainer = document.getElementById('game-container');
+	const toolTip = document.getElementsByClassName('tooltip');
+	const characterClass = document.getElementsByClassName('character');
+	const cellMapIle = document.getElementsByClassName('cell map-tile');
     const index = this.cells.indexOf(event.currentTarget);
     this.cellEnterListeners.forEach(o => o.call(null, index));
+	let teams = JSON.parse(localStorage['teamsPlayer']).concat(JSON.parse(localStorage['teamsOpponent']));
+
+	let taskName = '<div class="tooltip"></div>';
+	gameContainer.insertAdjacentHTML('beforeEnd', taskName);
+	let forEach = Array.prototype.forEach;
+	Array.from(cellMapIle).forEach(c => {
+		if ((c.className.includes('selected-yellow')) && cellMapIle[index].children.length == 0) {
+			cellMapIle[index].style['cursor'] = cursors.pointer;
+			this.selectCell(index, 'green');
+		}
+	})
+	
+	if (cellMapIle[index].children.length == 1) {
+		toolTip[0].style = `display: block; font-size: 14px; color: #fff; left: ${event.pageX}px; top: ${event.pageY + 5}px;`;
+		cellMapIle[index].style['cursor'] = cursors.pointer;
+		teams.forEach(t => {
+			if (t.position == index) {
+				toolTip[0].textContent = `\u{1F396}${t.character.level} \u{2694}${t.character.attack} \u{1F6E1}${t.character.defence} \u{2764}${t.character.health}`;
+			}
+		})
+	}
   }
 
   onCellLeave(event) {
     event.preventDefault();
+	const toolTip = document.getElementsByClassName('tooltip');
     const index = this.cells.indexOf(event.currentTarget);
+	const cellMapIle = document.getElementsByClassName('cell map-tile');
     this.cellLeaveListeners.forEach(o => o.call(null, index));
+	toolTip[0].remove();
+	if (this.cells[index].children.length == 0) {
+		this.cells[index].classList.remove('selected');
+		this.cells[index].classList.remove('selected-green');
+	}
+	Array.from(cellMapIle).forEach(c => {
+		if ((c.className.includes('selected-yellow')) && cellMapIle[index].children.length == 0) {
+			cellMapIle[index].style['cursor'] = cursors.auto;
+		}
+	});
   }
 
   onCellClick(event) {
     const index = this.cells.indexOf(event.currentTarget);
     this.cellClickListeners.forEach(o => o.call(null, index));
+	const cell = this.cells[index];
+	let forEach = Array.prototype.forEach;
+    forEach.call(document.querySelectorAll('.selected'), function(node) {
+        node.classList.remove('selected');
+        node.classList.remove('selected-yellow');
+        node.classList.remove('selected-green');
+    });
+	if (!event.target.className.includes('selected') && ['bowman', 'swordsman', 'magician'].includes(event.target.classList[1])) {
+		this.selectCell(index);
+
+	} else if (['daemon', 'undead', 'vampire'].includes(event.target.classList[1])){
+		alert('Р’С‹Р±СЂР°РЅР° РЅРµ РІР°С€Р° РєРѕРјР°РЅРґР°');
+	}
   }
 
   onNewGameClick(event) {
@@ -193,7 +244,8 @@ export default class GamePlay {
   deselectCell(index) {
     const cell = this.cells[index];
     cell.classList.remove(...Array.from(cell.classList)
-      .filter(o => o.startsWith('selected')));
+      .filter(o => o.startsWith('selected')
+	  ));
   }
 
   showCellTooltip(message, index) {
