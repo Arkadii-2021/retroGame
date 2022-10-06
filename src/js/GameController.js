@@ -2,6 +2,7 @@ import themes from './themes';
 import Team from './Team';
 import { randIntArray } from './utils';
 import { characterGenerator, generateTeam } from './generators';
+import cursors from './cursors';
 
 import {
   Bowman,
@@ -41,12 +42,16 @@ export default class GameController {
 	  generateTeam(charactersOnTeam, level, quantity).characters.forEach(function(team1, i) {
 		  team.push(new PositionedCharacter(team1, positions[i]));
 	  });
+	  localStorage.getItem('teamsPlayer') ? localStorage['teamsOpponent'] = JSON.stringify(team) : localStorage['teamsPlayer'] = JSON.stringify(team);
 	  return team;
   }
 
   init() {
+	  localStorage.clear();
 	  this.gamePlay.drawUi(themes.prairie);
 	  this.gamePlay.redrawPositions(this.createTeams([Bowman, Swordsman, Magician], 4, 5, 'columnTeam', 'columnTeam', 57, 0, 1).concat(this.createTeams([Daemon, Undead, Vampire], 4, 5, 'columnOpponent', 'columnOpponent', 64, 6, 7)));
+	  this.onCellEnter();
+	  const tTip = document.getElementsByClassName('tooltip');
     // TODO: add event listeners to gamePlay events
     // TODO: load saved stated from stateService
   }
